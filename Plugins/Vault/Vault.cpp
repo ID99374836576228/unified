@@ -29,7 +29,7 @@
 #include "API/CPathfindInformation.hpp"
 #include "API/CFactionManager.hpp"
 #include "API/CNWSFaction.hpp"
-#include "API/NWVMachineUtils.hpp"
+#include "API/NWSVMachineUtils.hpp"
 
 #include <sqlite_modern_cpp.h>
 
@@ -287,7 +287,7 @@ static json PlayerCreatureToJson(CNWSPlayer *pPlayer)
         if (pPolymorphData)
             pCreature->RestorePolymorphToOutputCreature(pPolymorphData);
 
-        return NWVMachineUtils::StructToJson(&gff, &root, 0xFFFFFFFF);
+        return NWSVMachineUtils::StructToJson(&gff, &root, 0xFFFFFFFF);
     }
 
     return {};
@@ -309,7 +309,7 @@ static STRREF LoadCreatureData(CNWSPlayer *pPlayer, int32_t nCharacterId, CNWSCr
 
     if (gff.CreateGFFFile(&root, "BIC ", "V2.0"))
     {
-        NWVMachineUtils::JsonToStruct(jCharacter, &gff, &root);
+        NWSVMachineUtils::JsonToStruct(jCharacter, &gff, &root);
 
         pPlayer->m_resFileName = std::to_string(nCharacterId);
 
@@ -729,7 +729,7 @@ static void MigrateVault(CNWSPlayer *pPlayer)
 
             if (gff.m_bLoaded)
             {
-                json jCharacter = NWVMachineUtils::StructToJson(&gff, &root, 0xFFFFFFFF);
+                json jCharacter = NWSVMachineUtils::StructToJson(&gff, &root, 0xFFFFFFFF);
 
                 if (auto characterId = VaultInsertCharacter(cdkey, jCharacter, sFileName.CStr()))
                 {
@@ -986,7 +986,7 @@ static BOOL SendServerToPlayerUpdateCharResponseHook(CNWSMessage *pThis, CNWSPla
                    CResStruct root{};
                    if (gff.CreateGFFFile(&root, "BIC ", "V2.0"))
                    {
-                       NWVMachineUtils::JsonToStruct(json::parse(character), &gff, &root);
+                       NWSVMachineUtils::JsonToStruct(json::parse(character), &gff, &root);
 
                        uint8_t *pData = nullptr;
                        int32_t nSize = 0;
