@@ -1,5 +1,5 @@
 @page feat Readme
-@ingroup feat 
+@ingroup feat
 
 This plugin allows for the builder to define many traits for feats.
 
@@ -58,6 +58,9 @@ These commands should be ran `on_module_load`.
 * [SPELLIMMUNITY](#spellimmunity)
 * [SRCHARGEN](#srchargen)
 * [SRINCLEVEL](#srinclevel)
+* [SPELLSAVEDC](#spellsavedc)
+* [SPELLSAVEDCFORSCHOOL](#spellsavedcforschool)
+* [SPELLSAVEDCFORSPELL](#spellsavedcforspell)
 * [TRUESEEING](#trueseeing)
 * [ULTRAVISION](#ultravision)
 * [VISUALEFFECT](#visualeffect)
@@ -140,7 +143,7 @@ NWNX_Feat_SetFeatModifier(2150, NWNX_FEAT_MODIFIER_BONUSSPELL, CLASS_TYPE_CLERIC
 ```
 ***
 ### CONCEALMENT
-The `CONCEALMENT` entry is used to grant an inate concealment.
+The `CONCEALMENT` entry is used to grant an innate concealment.
 
 * Param1 = Modifier value (1-100)
 
@@ -149,8 +152,20 @@ The `CONCEALMENT` entry is used to grant an inate concealment.
 NWNX_Feat_SetFeatModifier(2150, NWNX_FEAT_MODIFIER_CONCEALMENT, 30);
 ```
 ***
+### DAMAGE
+The `DAMAGE` entry gives a damage increase or decrease, as per the EffectDamageIncrease(/Decrease) effect
+
+* Param1 = The damage type. Must be a single DAMAGE_TYPE_* constant per-call, although you can do multiple calls on the same feat to add further damage types
+* Param2 = DAMAGE_BONUS_* constant group, from iprp_damagecost.2da. Negative values result in a DamageDecrease, including relevent limitations of that Effect.
+
+##### Example script on_module_load
+```c
+NWNX_Feat_SetFeatModifier(2150, NWNX_FEAT_MODIFIER_DAMAGE, DAMAGE_TYPE_FIRE, 10); //2d6 Fire Damage
+NWNX_Feat_SetFeatModifier(2150, NWNX_FEAT_MODIFIER_DAMAGE, DAMAGE_TYPE_COLD, 5); //Additionally +5 Cold damage
+```
+***
 ### DMGREDUCTION
-The `DMGREDUCTION` entry gives an inate damage reduction
+The `DMGREDUCTION` entry gives an innate damage reduction
 
 * Param1 = Points to soak (+)
 * Param2 = Level of soak (+)
@@ -162,7 +177,7 @@ NWNX_Feat_SetFeatModifier(2150, NWNX_FEAT_MODIFIER_DMGREDUCTION, 10, 4);
 ```
 ***
 ### DMGRESIST
-The `DMGRESIST` entry gives an inate resistance to damage types
+The `DMGRESIST` entry gives an innate resistance to damage types
 
 * Param1 = The damage type, can be a single Damage Type integer or multiple Damage Type integers summed. You can also just do each on its own line if you'd prefer. Hex can be used for the scripting method if preferred.
 * Param2 = Points to resist (+)
@@ -174,7 +189,7 @@ NWNX_Feat_SetFeatModifier(2150, NWNX_FEAT_MODIFIER_DMGRESIST, DAMAGE_TYPE_FIRE &
 ```
 ***
 ### DMGIMMUNITY
-The `DMGIMMUNITY` entry gives an inate immunity to damage types
+The `DMGIMMUNITY` entry gives an innate immunity to damage types
 
 * Param1 = The damage type, can be a single Damage Type integer or multiple Damage Type integers summed. You can also just do each on its own line if you'd prefer. Hex can be used for the scripting method if preferred.
 * Param2 = Percentage to resist (+/-)
@@ -216,7 +231,7 @@ NWNX_Feat_SetFeatModifier(2150, NWNX_FEAT_MODIFIER_MOVEMENTSPEED, 33);
 ```
 ***
 ### REGENERATION
-The `REGENERATION` entry is used to grant inate regeneration.
+The `REGENERATION` entry is used to grant innate regeneration.
 
 * Param1 = How many hitpoints to increase (+)
 * Param2 = How often in seconds to increase the hitpoints (+)
@@ -313,6 +328,38 @@ The `SRINCLEVEL` entry is used to award a spell resistance racial bonus as the c
 ##### Example script on_module_load
 ```c
 NWNX_Feat_SetFeatModifier(2150, NWNX_FEAT_MODIFIER_SRINCLEVEL, 1, 1, 6);
+```
+***
+### SPELLSAVEDC
+The `SPELLSAVEDC` entry is used to modify a creature's spell DCs.
+
+* Param1 = Modifier value (+/-)
+
+##### Example script on_module_load
+```c
+NWNX_Feat_SetFeatModifier(2150, NWNX_FEAT_MODIFIER_SPELLSAVEDC, 1);
+```
+***
+### SPELLSAVEDCFORSCHOOL
+The `SPELLSAVEDCFORSCHOOL` entry is used to modify a creature's spell DCs for a spell school.
+
+* Param1 = A SPELL_SCHOOL_ constant
+* Param2 = Modifier value (+/-)
+
+##### Example script on_module_load
+```c
+NWNX_Feat_SetFeatModifier(2150, NWNX_FEAT_MODIFIER_SPELLSAVEDCFORSCHOOL, SPELL_SCHOOL_ILLUSION, 1);
+```
+***
+### SPELLSAVEDCFORSPELL
+The `SPELLSAVEDCFORSPELL` entry is used to modify a creature's spell DCs for an individual spell.
+
+* Param1 = A SPELL_ constant
+* Param2 = Modifier value (+/-)
+
+##### Example script on_module_load
+```c
+NWNX_Feat_SetFeatModifier(2150, NWNX_FEAT_MODIFIER_SPELLSAVEDCFORSPELL, SPELL_PHANTASMAL_KILLER, 1);
 ```
 ***
 ### TRUESEEING

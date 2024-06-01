@@ -14,9 +14,7 @@ add_plugin(Tweaks
     "FixDispelEffectLevels.cpp"
     "FixGreaterSanctuaryBug.cpp"
     "FixItemNullptrInCItemRepository.cpp"
-    "FixResolveSpecialAttackDamage.cpp"
     "FixTriggerEnterDetection.cpp"
-    "FixTURDEffectUnlinking.cpp"
     "FixUnlimitedPotionsBug.cpp"
     "HideOnCharList.cpp"
     "HideHardcodedItemVFX.cpp"
@@ -34,4 +32,9 @@ add_plugin(Tweaks
     "TURDByCDKey.cpp"
     "UnhardcodeShields.cpp"
     "UncapDamageResistanceDamageFlags.cpp"
-    "PreventAttackBonusBypassingReductions.cpp")
+    "PreventAttackBonusBypassingReductions.cpp"
+    "RangedWeaponsUseOnHitEffectItemProperties.cpp"
+    "RangedWeaponsUseOnHitCastSpellItemProperties.cpp"
+    "CastAllOnHitCastSpellItemProperties.cpp"
+    "SetAreaCallsSetPosition.cpp"
+    "EquipUnequipEventTweaks.cpp")

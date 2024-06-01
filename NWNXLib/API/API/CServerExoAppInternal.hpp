@@ -35,7 +35,7 @@ struct CNWSSoundObject;
 struct CNWSStore;
 struct CNWSTrigger;
 struct CNWSWaypoint;
-struct CNWVirtualMachineCommands;
+struct CNWSVirtualMachineCommands;
 struct CNetLayer;
 struct CServerAIMaster;
 struct CServerInfo;
@@ -64,7 +64,7 @@ struct CServerExoAppInternal
     BOOL m_bCDResponseReceived;
     CServerInfo * m_pServerInfo;
     int16_t m_nServerMode;
-    CNWVirtualMachineCommands * m_pVirtualMachineCommandImplementer;
+    CNWSVirtualMachineCommands * m_pVirtualMachineCommandImplementer;
     CNWSMessage * m_pMessage;
     BOOL m_bForceUpdate;
     uint32_t * m_pPendingAuthorization;
@@ -114,11 +114,13 @@ struct CServerExoAppInternal
     CExoArrayList<CExoString> m_lstBannedListPlayerName;
     C2DA * m_pOldServerVault2DA;
     C2DA * m_pKnownServerNames2DA;
-    uint16_t m_nBannedListsTimeStampSecond;
-    uint16_t m_nBannedListsTimeStampMinute;
-    uint16_t m_nBannedListsTimeStampHour;
     uint32_t m_nBannedListsTimeStamp;
     CExoLinkedListPosition m_posPCObject;
+    int m_nGameObjectUpdateIntervalTarget;
+    int m_nGameObjectUpdateIntervalTargetLoading;
+    int m_nGameObjectUpdateMessageLimit;
+    int m_nGameObjectUpdateMessageLimitLoading;
+    uint64_t m_nLastGameObjectUpdateDuration = 0;
     uint64_t m_nAutoSaveTimer;
     CExoArrayList<SSubNetProfile *> m_acSubNetProfiles;
     uint64_t m_nTotalSubNetSent;
@@ -141,7 +143,7 @@ struct CServerExoAppInternal
     int32_t m_AbilityBonusLimitModule;
     int32_t m_AbilityPenaltyLimitModule;
     int32_t m_SkillBonusLimitModule;
-    NWSyncAdvertisement m_nwsyncModuleSourceAdvert;
+    NWSync::Advertisement m_nwsyncModuleSourceAdvert;
     AdvertLUT m_nwsyncAdvertLUT;
 
     CServerExoAppInternal();
@@ -183,7 +185,6 @@ struct CServerExoAppInternal
     BOOL ExportAllPlayers();
     BOOL ExportPlayer(CNWSPlayer * pPlayer);
     void DealWithLoadGameError(uint32_t nLoadErr);
-    BOOL SetDDCipherForModule(CExoString moduleName);
     CNWSModule * GetModule();
     CExoString GetModuleName();
     CGameObject * GetGameObject(OBJECT_ID nObjectID);

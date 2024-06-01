@@ -26,6 +26,10 @@
 #include "API/CNWSUUID.hpp"
 #include "API/CLoopingVisualEffect.hpp"
 #include "API/CNWSpellArray.hpp"
+#include "API/CNWSSpellScriptData.hpp"
+#include "API/CNWSStore.hpp"
+#include "API/CNWSFaction.hpp"
+#include "API/CVirtualMachine.hpp"
 #include <cstring>
 
 using namespace NWNXLib;
@@ -379,19 +383,13 @@ NWNX_EXPORT ArgumentStack SetTriggerGeometry(ArgumentStack&& args)
 
                 if (pTrigger->m_pvVertices)
                     delete[] pTrigger->m_pvVertices;
-                if (pTrigger->m_pnOutlineVertices)
-                    delete[] pTrigger->m_pnOutlineVertices;
 
                 pTrigger->m_nVertices = vecVerts.size();
-                pTrigger->m_nOutlineVertices = vecVerts.size();
-
                 pTrigger->m_pvVertices = new Vector[pTrigger->m_nVertices];
-                pTrigger->m_pnOutlineVertices = new int32_t[pTrigger->m_nVertices];
 
                 for(int i = 0; i < pTrigger->m_nVertices; i++)
                 {
                     pTrigger->m_pvVertices[i] = vecVerts[i];
-                    pTrigger->m_pnOutlineVertices[i] = i;
                 }
 
                 Utils::AddToArea(pTrigger, pArea, pTrigger->m_pvVertices[0].x, pTrigger->m_pvVertices[0].y, pTrigger->m_pvVertices[0].z);
@@ -1001,6 +999,338 @@ NWNX_EXPORT ArgumentStack ForceAssignUUID(ArgumentStack&& args)
         }
 
         newuuid->TryAssign(sUUID);
+    }
+
+    return {};
+}
+
+int32_t GetItemRepositoryCount(CItemRepository *pRepo)
+{
+    auto nItems = 0;
+    for (auto *pNode = pRepo->m_oidItems.m_pcExoLinkedListInternal->pHead; pNode; pNode = pNode->pNext)
+    {
+        if (auto *pItem = pRepo->ItemListGetItem(pNode))
+        {
+            nItems++;
+            if (auto *pItemRepo = pItem->m_pItemRepository)
+                nItems += pItemRepo->m_oidItems.Count();
+            }
+        }
+
+    return nItems;
+}
+
+NWNX_EXPORT ArgumentStack GetInventoryItemCount(ArgumentStack&& args)
+{
+    if (auto *pObject = Utils::PopObject(args))
+    {
+        CItemRepository *pRepo;
+
+        if (auto *pCreature = Utils::AsNWSCreature(pObject))
+            pRepo = pCreature->m_pcItemRepository;
+        else if (auto *pPlaceable = Utils::AsNWSPlaceable(pObject))
+            pRepo = pPlaceable->m_pcItemRepository;
+        else if (auto *pItem = Utils::AsNWSItem(pObject))
+            pRepo = pItem->m_pItemRepository;
+        else if (auto *pStore = Utils::AsNWSStore(pObject))
+        {
+            auto nItems = 0;
+            for (int n = 0; n < 5; n++)
+            {
+                pRepo = pStore->m_aInventory[n];
+                nItems += GetItemRepositoryCount (pRepo);
+            }
+            return nItems;
+        }
+        else
+            return 0;
+
+        auto nItems = GetItemRepositoryCount(pRepo);
+        return nItems;
+    }
+
+    return 0;
+}
+
+NWNX_EXPORT ArgumentStack OverrideSpellProjectileVFX(ArgumentStack&& args)
+{
+    static Hooks::Hook s_BroadcastSafeProjectileHook =
+            Hooks::HookFunction(&CNWSObject::BroadcastSafeProjectile,
+            (void*)+[](CNWSObject *pThis, ObjectID oidOriginator, ObjectID oidTarget, Vector vOriginator, Vector vTarget, uint32_t nDelta,
+                       uint8_t nProjectileType, uint32_t nSpellID, uint8_t nAttackResult, uint8_t nProjectilePathType) -> void
+            {
+                if (nProjectileType >= 6)
+                {
+                    if (auto *pOriginator = Utils::AsNWSObject(Utils::GetGameObject(oidOriginator)))
+                    {
+                        if (auto projectileVfxOverride = pOriginator->nwnxGet<int32_t>("OSPVFX_TYPE"))
+                            nProjectileType = *projectileVfxOverride;
+
+                        if (auto projectilePathOverride = pOriginator->nwnxGet<int32_t>("OSPVFX_PATH"))
+                            nProjectilePathType = *projectilePathOverride;
+
+                        if (auto spellIDOverride = pOriginator->nwnxGet<int32_t>("OSPVFX_SPELLID"))
+                            nSpellID = *spellIDOverride;
+                    }
+                }
+
+                s_BroadcastSafeProjectileHook->CallOriginal<void>(pThis, oidOriginator, oidTarget, vOriginator, vTarget, nDelta, nProjectileType, nSpellID, nAttackResult, nProjectilePathType);
+            }, Hooks::Order::Late);
+
+    if (auto *pObject = Utils::PopGameObject(args))
+    {
+        const auto nProjectileVfx = args.extract<int32_t>();
+          ASSERT_OR_THROW(nProjectileVfx >= 6 || nProjectileVfx < 0);
+          ASSERT_OR_THROW(nProjectileVfx <= 7);
+        const auto nProjectilePath = args.extract<int32_t>();
+          ASSERT_OR_THROW(nProjectilePath <= 4);
+        const auto nSpellId = args.extract<int32_t>();
+          ASSERT_OR_THROW(nSpellId < Globals::Rules()->m_pSpellArray->m_nNumSpells);
+        const auto bPersist = !!args.extract<int32_t>();
+
+        if (nProjectileVfx < 0)
+        {
+            pObject->nwnxRemove("OSPVFX_TYPE");
+            pObject->nwnxRemove("OSPVFX_PATH");
+            pObject->nwnxRemove("OSPVFX_SPELLID");
+        }
+        else
+        {
+            pObject->nwnxSet("OSPVFX_TYPE", nProjectileVfx, bPersist);
+            pObject->nwnxSet("OSPVFX_PATH", nProjectilePath, bPersist);
+            pObject->nwnxSet("OSPVFX_SPELLID", nSpellId, bPersist);
+        }
+    }
+
+    return {};
+}
+
+NWNX_EXPORT ArgumentStack GetLastSpellInstant(ArgumentStack&&)
+{
+    static bool s_LastSpellInstant = false;
+    static bool s_IsInstantSpell = false;
+
+    struct SpellScriptData
+    {
+        CNWSSpellScriptData *pSpellScriptData = nullptr;
+        bool bInstantSpell = false;
+        ~SpellScriptData() { delete pSpellScriptData; }
+    };
+
+    static Hooks::Hook pSpellCastAndImpactHook = Hooks::HookFunction(&CNWSObject::SpellCastAndImpact,
+    (void*)+[](CNWSObject *pThis, uint32_t nSpellId, Vector vTargetPosition, ObjectID oidTarget, uint8_t nMultiClass, ObjectID oidItem,
+               BOOL bSpellCountered, BOOL bCounteringSpell, uint8_t nProjectilePathType, BOOL bInstantSpell) -> void
+    {
+        s_IsInstantSpell = bInstantSpell;
+        pSpellCastAndImpactHook->CallOriginal<void>(pThis, nSpellId, vTargetPosition, oidTarget, nMultiClass, oidItem, bSpellCountered, bCounteringSpell, nProjectilePathType, bInstantSpell);
+        s_IsInstantSpell = false;
+    }, Hooks::Order::Earliest);
+
+    static Hooks::Hook pAddEventDeltaTimeHook = Hooks::HookFunction(&CServerAIMaster::AddEventDeltaTime,
+    (void*)+[](CServerAIMaster *pThis, uint32_t nDaysFromNow, uint32_t nTimeFromNow, ObjectID nCallerObjectId, ObjectID nObjectId, uint32_t nEventId, void *pEventData) -> BOOL
+    {
+        if (pEventData && (nEventId == Constants::AIMasterEvent::SpellImpact || nEventId == Constants::AIMasterEvent::ItemOnHitSpellImpact))
+        {
+            auto *pNewSpellScriptData = new SpellScriptData;
+            pNewSpellScriptData->pSpellScriptData = (CNWSSpellScriptData*)pEventData;
+            pNewSpellScriptData->bInstantSpell = s_IsInstantSpell;
+            return pAddEventDeltaTimeHook->CallOriginal<BOOL>(pThis, nDaysFromNow, nTimeFromNow, nCallerObjectId, nObjectId, nEventId, pNewSpellScriptData);
+        }
+        return pAddEventDeltaTimeHook->CallOriginal<BOOL>(pThis, nDaysFromNow, nTimeFromNow, nCallerObjectId, nObjectId, nEventId, pEventData);
+    }, Hooks::Order::Early);
+
+    static Hooks::Hook pCreatureEventHandlerHook = Hooks::HookFunction(API::Functions::_ZN12CNWSCreature12EventHandlerEjjPvjj,
+    (void*)+[](CNWSCreature *pThis, uint32_t nEventId, ObjectID nCallerObjectId, void *pEventData, uint32_t nCalendarDay, uint32_t nTimeOfDay) -> void
+    {
+        if (nEventId == Constants::AIMasterEvent::SpellImpact || nEventId == Constants::AIMasterEvent::ItemOnHitSpellImpact)
+        {
+            if (!pEventData) return;
+            auto *pSpellScriptData = (SpellScriptData*)pEventData;
+
+            if (pSpellScriptData->pSpellScriptData->m_oidCaster == nCallerObjectId)
+            {
+                uint32_t lastSpellId;
+                uint32_t lastSpellObjectTarget;
+                Vector lastSpellLocationTarget;
+                uint32_t lastSpellCastItem;
+                uint16_t lastSpellCastFeat;
+                BOOL lastItemCastSpell;
+                int32_t lastItemCastSpellLevel;
+                bool lastSpellInstant;
+
+                if (nEventId == Constants::AIMasterEvent::ItemOnHitSpellImpact)
+                {
+                    lastSpellId = pThis->m_nLastSpellId;
+                    lastSpellObjectTarget = pThis->m_oidLastSpellTarget;
+                    lastSpellLocationTarget = pThis->m_vLastSpellTarget;
+                    lastSpellCastItem = pThis->m_oidLastSpellCastItem;
+                    lastSpellCastFeat = pThis->m_nLastSpellCastFeat;
+                    lastItemCastSpell = pThis->m_bLastItemCastSpell;
+                    lastItemCastSpellLevel = pThis->m_nLastItemCastSpellLevel;
+                    lastSpellInstant = s_LastSpellInstant;
+                }
+
+                pThis->m_nLastSpellId = pSpellScriptData->pSpellScriptData->m_nSpellId;
+                pThis->m_oidLastSpellTarget = pSpellScriptData->pSpellScriptData->m_oidTarget;
+                pThis->m_vLastSpellTarget = pSpellScriptData->pSpellScriptData->m_vTargetPosition;
+                pThis->m_oidLastSpellCastItem = pSpellScriptData->pSpellScriptData->m_oidItem;
+                pThis->m_nLastSpellCastFeat = pSpellScriptData->pSpellScriptData->m_nFeatId;
+                if (auto *pTarget = Utils::AsNWSObject(Utils::GetGameObject(pSpellScriptData->pSpellScriptData->m_oidTarget)))
+                {
+                    if (pThis->GetArea() == pTarget->GetArea())
+                        pThis->m_vLastSpellTarget = pTarget->m_vPosition;
+                }
+                pThis->m_nEffectSpellId = pSpellScriptData->pSpellScriptData->m_nSpellId;
+                pThis->m_nSavingThrowSpellId = pSpellScriptData->pSpellScriptData->m_nSpellId;
+                if (nEventId == Constants::AIMasterEvent::ItemOnHitSpellImpact)
+                {
+                    pThis->m_bLastItemCastSpell = true;
+                    pThis->m_nLastItemCastSpellLevel = pSpellScriptData->pSpellScriptData->m_nItemCastLevel;
+                    pThis->CalculateLastSpellProjectileTime();
+                }
+                s_LastSpellInstant = pSpellScriptData->bInstantSpell;
+
+                Globals::VirtualMachine()->RunScript(&pSpellScriptData->pSpellScriptData->m_sScript, pThis->m_idSelf, true);
+
+                pThis->m_nEffectSpellId = 0xFFFFFFFF;
+                pThis->m_nSavingThrowSpellId = 0xFFFFFFFF;
+                pThis->m_bLastItemCastSpell = false;
+                pThis->m_nLastItemCastSpellLevel = -1;
+                s_LastSpellInstant = false;
+                if (nEventId == Constants::AIMasterEvent::ItemOnHitSpellImpact)
+                {
+                    pThis->m_nLastSpellId = lastSpellId;
+                    pThis->m_oidLastSpellTarget = lastSpellObjectTarget;
+                    pThis->m_vLastSpellTarget = lastSpellLocationTarget;
+                    pThis->m_oidLastSpellCastItem = lastSpellCastItem;
+                    pThis->m_nLastSpellCastFeat = lastSpellCastFeat;
+                    pThis->m_bLastItemCastSpell = lastItemCastSpell;
+                    pThis->m_nLastItemCastSpellLevel = lastItemCastSpellLevel;
+                    s_LastSpellInstant = lastSpellInstant;
+                }
+            }
+
+            delete pSpellScriptData;
+        }
+        else
+            pCreatureEventHandlerHook->CallOriginal<void>(pThis, nEventId, nCallerObjectId, pEventData, nCalendarDay, nTimeOfDay);
+    }, Hooks::Order::Late);
+
+    static Hooks::Hook pPlaceableEventHandlerHook = Hooks::HookFunction(API::Functions::_ZN13CNWSPlaceable12EventHandlerEjjPvjj,
+    (void*)+[](CNWSPlaceable *pThis, uint32_t nEventId, ObjectID nCallerObjectId, void *pEventData, uint32_t nCalendarDay, uint32_t nTimeOfDay) -> void
+    {
+        if (nEventId == Constants::AIMasterEvent::SpellImpact)
+        {
+            if (!pEventData) return;
+            auto *pSpellScriptData = (SpellScriptData*)pEventData;
+
+            if (pSpellScriptData->pSpellScriptData->m_oidCaster == nCallerObjectId)
+            {
+                pThis->m_nLastSpellId = pSpellScriptData->pSpellScriptData->m_nSpellId;
+                pThis->m_oidLastSpellTarget = pSpellScriptData->pSpellScriptData->m_oidTarget;
+                pThis->m_vLastSpellTarget = pSpellScriptData->pSpellScriptData->m_vTargetPosition;
+                if (auto *pTarget = Utils::AsNWSObject(Utils::GetGameObject(pSpellScriptData->pSpellScriptData->m_oidTarget)))
+                {
+                    if (pThis->GetArea() == pTarget->GetArea())
+                        pThis->m_vLastSpellTarget = pTarget->m_vPosition;
+                }
+                pThis->m_nEffectSpellId = pSpellScriptData->pSpellScriptData->m_nSpellId;
+                pThis->m_nSavingThrowSpellId = pSpellScriptData->pSpellScriptData->m_nSpellId;
+                s_LastSpellInstant = pSpellScriptData->bInstantSpell;
+
+                Globals::VirtualMachine()->RunScript(&pSpellScriptData->pSpellScriptData->m_sScript, pThis->m_idSelf, true);
+
+                pThis->m_nEffectSpellId = 0xFFFFFFFF;
+                pThis->m_nSavingThrowSpellId = 0xFFFFFFFF;
+                s_LastSpellInstant = false;
+            }
+            delete pSpellScriptData;
+        }
+        else
+            pPlaceableEventHandlerHook->CallOriginal<void>(pThis, nEventId, nCallerObjectId, pEventData, nCalendarDay, nTimeOfDay);
+    }, Hooks::Order::Late);
+
+    return s_LastSpellInstant;
+}
+
+NWNX_EXPORT ArgumentStack SetTrapCreator(ArgumentStack&& args)
+{
+    if (auto *pObject = Utils::PopObject(args))
+    {
+        auto newCreator = Constants::OBJECT_INVALID;
+        auto newFaction = 1; //STANDARD_FACTION_HOSTILE
+
+        if(auto *pCreator = Utils::PopCreature(args))
+        {
+            newCreator = pCreator->m_idSelf;
+            if (auto *pFaction = pCreator->GetFaction())
+                newFaction = pFaction->m_nFactionId;
+        }
+
+        if (auto *pDoor = Utils::AsNWSDoor(pObject))
+        {
+            pDoor->m_oidTrapCreator = newCreator;
+            pDoor->m_nTrapFactionId = newFaction;
+        }
+        else if (auto *pPlaceable = Utils::AsNWSPlaceable(pObject))
+        {
+            pPlaceable->m_oidTrapCreator = newCreator;
+            pPlaceable->m_nTrapFaction = newFaction;
+        }
+        else if (auto *pTrigger = Utils::AsNWSTrigger(pObject))
+        {
+            pTrigger->m_oidCreator = newCreator;
+            pTrigger->m_nFactionId = newFaction;
+        }
+    }
+    return {};
+}
+
+NWNX_EXPORT ArgumentStack GetLocalizedName(ArgumentStack&& args)
+{
+    if (auto *pGameObject = Utils::PopGameObject(args))
+    {
+        const auto nLanguage = args.extract<int32_t>();
+        const auto nGender   = args.extract<int32_t>();
+
+        CExoString myString;
+
+        if (auto *pArea = Utils::AsNWSArea(pGameObject))
+            pArea->m_lsName.GetString(nLanguage, &myString, nGender);
+        else if (auto *pStore = Utils::AsNWSStore(pGameObject))
+            pStore->m_sName.GetString(nLanguage, &myString, nGender);
+        else if (auto *pObject = Utils::AsNWSObject(pGameObject))
+            pObject->GetFirstName().GetString(nLanguage, &myString, nGender);
+
+        return myString;
+    }
+    return {};
+}
+
+NWNX_EXPORT ArgumentStack SetLocalizedName(ArgumentStack&& args)
+{
+    if (auto *pGameObject = Utils::PopGameObject(args))
+    {
+        const auto sName     = args.extract<std::string>();
+        const auto nLanguage = args.extract<int32_t>();
+        const auto nGender   = args.extract<int32_t>();
+
+        CExoString myString(sName);
+        if (auto *pArea = Utils::AsNWSArea(pGameObject))
+        {
+            pArea->m_lsName.RemoveString(nLanguage, nGender);
+            pArea->m_lsName.AddString(nLanguage, myString, nGender);
+        }
+        else if (auto *pStore = Utils::AsNWSStore(pGameObject))
+        {
+            pStore->m_sName.RemoveString(nLanguage, nGender);
+            pStore->m_sName.AddString(nLanguage, myString, nGender);
+        }
+        else if (auto *pObject = Utils::AsNWSObject(pGameObject))
+        {
+            pObject->GetFirstName().RemoveString(nLanguage, nGender);
+            pObject->GetFirstName().AddString(nLanguage, myString, nGender);
+        }
     }
 
     return {};

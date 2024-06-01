@@ -40,6 +40,13 @@ const int NWNX_OBJECT_TYPE_INTERNAL_PORTAL = 15;
 const int NWNX_OBJECT_TYPE_INTERNAL_SOUND = 16;
 /// @}
 
+/// @anchor projectile_types
+/// @name Projectile VFX Types
+/// @{
+const int NWNX_OBJECT_SPELL_PROJECTILE_TYPE_DEFAULT = 6;
+const int NWNX_OBJECT_SPELL_PROJECTILE_TYPE_USE_PATH = 7;
+/// @}
+
 /// A local variable structure.
 struct NWNX_Object_LocalVariable
 {
@@ -384,6 +391,47 @@ int NWNX_Object_GetLastSpellCastDomainLevel(object oObject);
 /// @param oObject The object
 /// @param sUUID The UUID to force
 void NWNX_Object_ForceAssignUUID(object oObject, string sUUID);
+
+/// @brief Returns how many items are in oObject's inventory.
+/// @param oObject A creature, placeable, item or store.
+/// @return Returns a count of how many items are in oObject's inventory.
+int NWNX_Object_GetInventoryItemCount(object oObject);
+
+/// @brief Override the projectile visual effect of ranged/throwing weapons and spells.
+/// @param oCreature The creature.
+/// @param nProjectileType A @ref projectile_types "NWNX_OBJECT_SPELL_PROJECTILE_TYPE_*" constant or -1 to remove the override.
+/// @param nProjectilePathType A "PROJECTILE_PATH_TYPE_*" constant or -1 to ignore.
+/// @param nSpellID A "SPELL_*" constant. -1 to ignore.
+/// @param bPersist Whether the override should persist to the .bic file (for PCs).
+/// @note Persistence is enabled after a server reset by the first use of this function. Recommended to trigger on a dummy target OnModuleLoad to enable persistence.
+///       This will override all spell projectile VFX from oCreature until the override is removed.
+void NWNX_Object_OverrideSpellProjectileVFX(object oCreature, int nProjectileType = -1, int nProjectilePathType = -1, int nSpellID = -1, int bPersist = FALSE);
+
+/// @brief Returns TRUE if the last spell was cast instantly. This function should only be called in a spell script.
+/// @note To initialize the hooks used by this function it is recommended to call this function once in your module load script.
+/// @return TRUE if the last spell was instant.
+int NWNX_Object_GetLastSpellInstant();
+
+/// @brief Sets the creator of a trap on door, placeable, or trigger. Also changes trap Faction to that of the new Creator.
+/// @note Triggers (ground traps) will instantly update colour (Green/Red). Placeable/doors will not change if client has already seen them.
+/// @param oObject Door, placeable or trigger (trap) object
+/// @param oCreator The new creator of the trap. Any non-creature creator will assign OBJECT_INVALID (similar to toolset-laid traps)
+void NWNX_Object_SetTrapCreator(object oObject, object oCreator);
+
+/// @brief Return the name of the object for nLanguage.
+/// @param oObject an object
+/// @param nLanguage A PLAYER_LANGUAGE constant.
+/// @param nGender   Gender to use, 0 or 1.
+/// @return The localized string.
+string NWNX_Object_GetLocalizedName(object oObject, int nLanguage, int nGender = 0);
+
+/// @brief Set the name of the object as set in the toolset for nLanguage.
+/// @note You may have to SetName(oObject, "") for the translated string to show.
+/// @param oObject an object
+/// @param sName New value to set
+/// @param nLanguage A PLAYER_LANGUAGE constant.
+/// @param nGender   Gender to use, 0 or 1.
+void NWNX_Object_SetLocalizedName(object oObject, string sName, int nLanguage, int nGender = 0);
 
 /// @}
 
@@ -965,5 +1013,65 @@ void NWNX_Object_ForceAssignUUID(object oObject, string sUUID)
 
     NWNX_PushArgumentString(sUUID);
     NWNX_PushArgumentObject(oObject);
+    NWNX_CallFunction(NWNX_Object, sFunc);
+}
+
+int NWNX_Object_GetInventoryItemCount(object oObject)
+{
+    string sFunc = "GetInventoryItemCount";
+
+    NWNX_PushArgumentObject(oObject);
+    NWNX_CallFunction(NWNX_Object, sFunc);
+    return NWNX_GetReturnValueInt();
+}
+
+void NWNX_Object_OverrideSpellProjectileVFX(object oCreature, int nProjectileType = -1, int nProjectilePathType = -1, int nSpellID = -1, int bPersist = FALSE)
+{
+    string sFunc = "OverrideSpellProjectileVFX";
+
+    NWNX_PushArgumentInt(bPersist);
+    NWNX_PushArgumentInt(nSpellID);
+    NWNX_PushArgumentInt(nProjectilePathType);
+    NWNX_PushArgumentInt(nProjectileType);
+    NWNX_PushArgumentObject(oCreature);
+    NWNX_CallFunction(NWNX_Object, sFunc);
+}
+
+int NWNX_Object_GetLastSpellInstant()
+{
+    string sFunc = "GetLastSpellInstant";
+    NWNX_CallFunction(NWNX_Object, sFunc);
+    return NWNX_GetReturnValueInt();
+}
+
+void NWNX_Object_SetTrapCreator(object oObject, object oCreator)
+{
+    string sFunc = "SetTrapCreator";
+    NWNX_PushArgumentObject(oCreator);
+    NWNX_PushArgumentObject(oObject);
+    NWNX_CallFunction(NWNX_Object, sFunc);
+}
+
+string NWNX_Object_GetLocalizedName(object oObject, int nLanguage, int nGender = 0)
+{
+    string sFunc = "GetLocalizedName";
+
+    NWNX_PushArgumentInt(nGender);
+    NWNX_PushArgumentInt(nLanguage);
+    NWNX_PushArgumentObject(oObject);
+
+    NWNX_CallFunction(NWNX_Object, sFunc);
+    return NWNX_GetReturnValueString();
+}
+
+void NWNX_Object_SetLocalizedName(object oObject, string sName, int nLanguage, int nGender = 0)
+{
+    string sFunc = "SetLocalizedName";
+
+    NWNX_PushArgumentInt(nGender);
+    NWNX_PushArgumentInt(nLanguage);
+    NWNX_PushArgumentString(sName);
+    NWNX_PushArgumentObject(oObject);
+
     NWNX_CallFunction(NWNX_Object, sFunc);
 }

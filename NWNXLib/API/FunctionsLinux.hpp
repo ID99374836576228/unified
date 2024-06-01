@@ -1,5 +1,5 @@
 #ifndef NWNXLIB_FUNCTION_NO_VERSION_CHECK
-NWNX_EXPECT_VERSION(8193, 35);
+NWNX_EXPECT_VERSION(8193, 36);
 #endif
 
 NWNXLIB_FUNCTION(_ZN21CServerExoAppInternal8SaveGameEjR10CExoStringS1_P10CNWSPlayeriS1_)
@@ -8,7 +8,7 @@ NWNXLIB_FUNCTION(_ZN10CNWSPlayerD0Ev)
 NWNXLIB_FUNCTION(_ZN10CNWSPlayerD1Ev)
 NWNXLIB_FUNCTION(_ZN10CNWSModule15LoadModuleStartE10CExoStringiiRKN6NWSync13AdvertisementE)
 
-// Hooking functions that override a virtual functions doesn't work with the new &Class::Function way...
+// Hooking functions that override a virtual function doesn't work with the new &Class::Function way...
 // .. so we need these!
 NWNXLIB_FUNCTION(_ZN11CNWSTrigger12EventHandlerEjjPvjj)
 NWNXLIB_FUNCTION(_ZN12CNWSCreature12EventHandlerEjjPvjj)
@@ -33,8 +33,18 @@ NWNXLIB_FUNCTION(_ZN22CNWSAreaOfEffectObject8AIUpdateEv)
 NWNXLIB_FUNCTION(_ZN8CNWSDoor8AIUpdateEv)
 NWNXLIB_FUNCTION(_ZN8CNWSItem8AIUpdateEv)
 NWNXLIB_FUNCTION(_ZN9CNWSStore8AIUpdateEv)
+NWNXLIB_FUNCTION(_ZN12CNWSCreature11ClearActionEP20CNWSObjectActionNodei)
 
 NWNXLIB_FUNCTION(_ZN21CNWSEffectListHandler15OnEffectAppliedEP10CNWSObjectP11CGameEffecti)
 NWNXLIB_FUNCTION(_ZN21CNWSEffectListHandler15OnEffectRemovedEP10CNWSObjectP11CGameEffect)
+
+NWNXLIB_FUNCTION(_ZN16CNWSAmbientSound15PlayBattleMusicEi)
+
+NWNXLIB_FUNCTION(_ZN10CNWSObject19GetCurrentHitPointsEi)
+NWNXLIB_FUNCTION(_ZN12CNWSCreature15GetMaxHitPointsEi)
+
+NWNXLIB_FUNCTION(_ZN23CNWSItemPropertyHandler24InitializeItemPropertiesEv)
+NWNXLIB_FUNCTION(_ZN23CNWSItemPropertyHandler21OnItemPropertyAppliedEP8CNWSItemP15CNWItemPropertyP12CNWSCreatureji)
+NWNXLIB_FUNCTION(_ZN23CNWSItemPropertyHandler21OnItemPropertyRemovedEP8CNWSItemP15CNWItemPropertyP12CNWSCreaturej)
 
 // ***
