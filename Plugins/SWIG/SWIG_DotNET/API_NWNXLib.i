@@ -88,7 +88,6 @@ MarshalPtr(CNWVisibilityNode*, void*)
 MarshalPtr(CObjectLookupTable*, void*)
 MarshalPtr(CPathfindInfoIntraTileSuccessors*, void*)
 MarshalPtr(CScriptCompiler*, void*)
-MarshalPtr(CScriptLog*, void*)
 MarshalPtr(CScriptParseTreeNode*, void*)
 MarshalPtr(CSpell_Add*, void*)
 MarshalPtr(CSpell_Delete*, void*)
@@ -194,9 +193,7 @@ MarshalPtr(Task::CExoTaskManager*, void*)
 %template(CExoLinkedListCResRef) CExoLinkedList<CResRef>;
 %template(CExoLinkedListCServerAIEventNode) CExoLinkedList<CServerAIEventNode>;
 %template(CExoLinkedListEXOLOCSTRING) CExoLinkedList<EXOLOCSTRING>;
-%template(CExoLinkedListNWAreaExpansion) CExoLinkedList<NWAREAEXPANSION>;
 %template(CExoLinkedListNWModuleCutscene) CExoLinkedList<NWMODULECUTSCENE>;
-%template(CExoLinkedListNWModuleExpansion) CExoLinkedList<NWMODULEEXPANSION>;
 %template(CExoLinkedListNWPlayerListItem) CExoLinkedList<NWPLAYERLISTITEM>;
 %template(CExoLinkedListObjectId) CExoLinkedList<OBJECT_ID>;
 
@@ -225,7 +222,6 @@ MapArray(CNWActionNode, CNWActionNode, CNWActionNodeArray);
 MapArray(CNWSCombatAttackData, CNWSCombatAttackData, CNWSCombatAttackDataArray);
 MapArray(CNWSCreatureStats_ClassInfo, CNWSCreatureStats_ClassInfo, CNWSCreatureStats_ClassInfoArray);
 MapArray(CNWTileSet*, CNWTileSet, CNWTileSetPtrArray);
-MapArray(CObjectLookupTable*, CObjectLookupTable, CObjectLookupTablePtrArray);
 MapArray(CScriptCompilerIncludeFileStackEntry, CScriptCompilerIncludeFileStackEntry, CScriptCompilerIncludeFileStackEntryArray);
 MapArray(CScriptParseTreeNode, CScriptParseTreeNode, CScriptParseTreeNodeArray);
 MapArray(CServerAIList, CServerAIList, CServerAIListArray);
@@ -282,7 +278,6 @@ MapArray(CNWClass_Skill, CNWClass_Skill, CNWClass_SkillArray);
 %template(CExoArrayListCNWVisibilityNodePtr) CExoArrayList<CNWVisibilityNode *>;
 %template(CExoArrayListCNWVisibilityNode) CExoArrayList<CNWVisibilityNode>;
 %template(CExoArrayListCResRef) CExoArrayList<CResRef>;
-%template(CExoArrayListCScriptLogPtr) CExoArrayList<CScriptLog *>;
 %template(CExoArrayListCSpellAddPtr) CExoArrayList<CSpell_Add *>;
 %template(CExoArrayListCSpellDeletePtr) CExoArrayList<CSpell_Delete *>;
 %template(CExoArrayListCStoreCustomerPtr) CExoArrayList<CStoreCustomer *>;
@@ -294,7 +289,6 @@ MapArray(CNWClass_Skill, CNWClass_Skill, CNWClass_SkillArray);
 %template(CExoArrayListNWPlayerCharacterListClass) CExoArrayList<NWPlayerCharacterListClass_st>;
 %template(CExoArrayListScriptParam) CExoArrayList<ScriptParam>;
 %template(CExoArrayListSJournalEntry) CExoArrayList<SJournalEntry>;
-%template(CExoArrayListSSubNetProfilePtr) CExoArrayList<SSubNetProfile *>;
 %template(CExoArrayListTextureReplaceInfo) CExoArrayList<TextureReplaceInfo>;
 %template(CExoArrayListUInt16) CExoArrayList<uint16_t>;
 %template(CExoArrayListUInt32) CExoArrayList<uint32_t>;
@@ -313,7 +307,6 @@ DefineArray(CNWActionNode, CNWActionNode, CNWActionNodeArray);
 DefineArray(CNWSCombatAttackData, CNWSCombatAttackData, CNWSCombatAttackDataArray);
 DefineArray(CNWSCreatureStats_ClassInfo, CNWSCreatureStats_ClassInfo, CNWSCreatureStats_ClassInfoArray);
 DefineArray(CNWTileSet*, CNWTileSet, CNWTileSetPtrArray);
-DefineArray(CObjectLookupTable*, CObjectLookupTable, CObjectLookupTablePtrArray);
 DefineArray(CScriptCompilerIncludeFileStackEntry, CScriptCompilerIncludeFileStackEntry, CScriptCompilerIncludeFileStackEntryArray);
 DefineArray(CScriptParseTreeNode, CScriptParseTreeNode, CScriptParseTreeNodeArray);
 DefineArray(CServerAIList, CServerAIList, CServerAIListArray);
