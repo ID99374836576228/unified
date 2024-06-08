@@ -765,20 +765,28 @@ static BOOL SaveServerCharacterHook(CNWSPlayer *pPlayer, BOOL)
     LOG_DEBUG("SaveServerCharacter");
 
     if (pPlayer->m_nCharacterType != 3 && pPlayer->m_nCharacterType != 4)
+    {
+	LOG_WARNING("Player char type is unexpected: %02d", pPlayer->m_nCharacterType);    
         return false;
+    }
 
     json jCharacter = PlayerCreatureToJson(pPlayer);
 
-    if (jCharacter.is_null())
+    if (jCharacter.is_null()) 
+    {
+	LOG_DEBUG("Player serialized into JSON was NULL");
         return false;
+    }
 
     int32_t characterId = GetPlayerCharacterId(pPlayer);
 
     if (!characterId)
     {
+	LOG_DEBUG("No characterId for player char (probably a new char); inserting");
         std::string cdkey = GetPlayerCDKey(pPlayer);
         if ((characterId = VaultInsertCharacter(cdkey, jCharacter)))
         {
+            LOG_DEBUG("Inserted a new player char");
             VaultInsertLogEvent(characterId, cdkey, VaultEventType::Created);
             VaultSetPlayerAccess(characterId, cdkey);
             VaultSetPlayerOnline(characterId, cdkey);
@@ -789,11 +797,13 @@ static BOOL SaveServerCharacterHook(CNWSPlayer *pPlayer, BOOL)
         }
         else
         {
+	    LOG_DEBUG("Failed to insert a new player char");
             return false;
         }
     }
     else
     {
+	LOG_DEBUG("Found a characterId for player char (existing record); updating");
         return VaultUpdateCharacter(characterId, jCharacter);
     }
 
