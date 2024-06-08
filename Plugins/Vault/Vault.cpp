@@ -223,7 +223,8 @@ static void InitializeServervault()
 static std::string GetPlayerCDKey(CNWSPlayer *pPlayer)
 {
     auto *pPlayerInfo = Globals::AppManager()->m_pServerExoApp->GetNetLayer()->GetPlayerInfo(pPlayer->m_nPlayerID);
-    return pPlayerInfo ? pPlayerInfo->m_lstKeys.element[0].sPublic.CStr() : "";
+    //return pPlayerInfo ? pPlayerInfo->m_lstKeys.element[0].sPublic.CStr() : "";
+    return pPlayerInfo ? pPlayerInfo->m_cCDKey.sPublic.CStr() : "";
 }
 
 static int32_t GetPlayerCharacterId(CNWSPlayer *pPlayer)
