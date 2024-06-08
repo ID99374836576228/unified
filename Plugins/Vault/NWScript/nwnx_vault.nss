@@ -32,15 +32,15 @@ json NWNX_Vault_GetCharacterJson(object oPlayer);
 
 void NWNX_Vault_SwitchCharacter(object oPlayer, int nCharacterId, int bSaveCurrentCharacter = TRUE)
 {
-    NWNX_PushArgumentInt(bSaveCurrentCharacter);
-    NWNX_PushArgumentInt(nCharacterId);
-    NWNX_PushArgumentObject(oPlayer);
-    NWNX_CallFunction(NWNX_Vault, "SwitchCharacter");
+    NWNXPushInt(bSaveCurrentCharacter);
+    NWNXPushInt(nCharacterId);
+    NWNXPushObject(oPlayer);
+    NWNXCall(NWNX_Vault, "SwitchCharacter");
 }
 
 json NWNX_Vault_GetCharacterJson(object oPlayer)
 {
-    NWNX_PushArgumentObject(oPlayer);
-    NWNX_CallFunction(NWNX_Vault, "GetCharacterJson");
-    return NWNX_GetReturnValueJson();
+    NWNXPushObject(oPlayer);
+    NWNXCall(NWNX_Vault, "GetCharacterJson");
+    return NWNXPopJson();
 }
