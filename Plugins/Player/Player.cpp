@@ -1217,6 +1217,24 @@ NWNX_EXPORT ArgumentStack SetCreatureNameOverride(ArgumentStack&& args)
     return {};
 }
 
+NWNX_EXPORT ArgumentStack GetCreatureNameOverride(ArgumentStack&& args)
+{
+    if (auto *pPlayer = Utils::PopPlayer(args))
+    {
+        auto oidTarget = args.extract<ObjectID>();
+          ASSERT_OR_THROW(oidTarget != Constants::OBJECT_INVALID);
+
+        if (auto *pCreature = Utils::AsNWSCreature(Utils::GetGameObject(oidTarget)))
+        {
+			if (auto nameOverride = pCreature->nwnxGet<std::string>("CRENO_" + Utils::ObjectIDToString(pPlayer->m_oidNWSObject)))
+                return *nameOverride;
+			else
+				return "";
+        }
+    }
+    return "";
+}
+
 NWNX_EXPORT ArgumentStack FloatingTextStringOnCreature(ArgumentStack&& args)
 {
     if (auto *pPlayer = Utils::PopPlayer(args))

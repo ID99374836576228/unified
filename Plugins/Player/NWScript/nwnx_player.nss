@@ -323,6 +323,11 @@ void NWNX_Player_SetCustomToken(object oPlayer, int nCustomTokenNumber, string s
 /// @param sName The name for the creature for this player, "" to clear the override.
 void NWNX_Player_SetCreatureNameOverride(object oPlayer, object oCreature, string sName);
 
+/// @brief Get override of the name of creature for player only or "" if it doesn't exist
+/// @param oPlayer The player object.
+/// @param oCreature The creature object.
+string NWNX_Player_GetCreatureNameOverride(object oPlayer, object oCreature);
+
 /// @brief Display floaty text above oCreature for oPlayer only.
 /// @note This will also display the floaty text above creatures that are not part of oPlayer's faction.
 /// @param oPlayer The player to display the text to.
@@ -791,6 +796,14 @@ void NWNX_Player_SetCreatureNameOverride(object oPlayer, object oCreature, strin
     NWNXPushObject(oCreature);
     NWNXPushObject(oPlayer);
     NWNXCall(NWNX_Player, "SetCreatureNameOverride");
+}
+
+string NWNX_Player_GetCreatureNameOverride(object oPlayer, object oCreature)
+{
+    NWNXPushObject(oCreature);
+    NWNXPushObject(oPlayer);
+    NWNXCall(NWNX_Player, "GetCreatureNameOverride");
+	return NWNXPopString();
 }
 
 void NWNX_Player_FloatingTextStringOnCreature(object oPlayer, object oCreature, string sText, int bChatWindow = TRUE)
