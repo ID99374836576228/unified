@@ -13,9 +13,7 @@
 #include "API/CResGFF.hpp"
 #include "API/CNWSPlayer.hpp"
 #include "API/CNWSCreature.hpp"
-#include "API/CNWSCreatureStats.hpp"
 #include "API/CExoAliasList.hpp"
-#include "API/CNWSCreRestorePolymorphData.hpp"
 #include "API/CNWSCombatRound.hpp"
 #include "API/CExoResMan.hpp"
 #include "API/CExoArrayList.hpp"
@@ -223,7 +221,6 @@ static void InitializeServervault()
 static std::string GetPlayerCDKey(CNWSPlayer *pPlayer)
 {
     auto *pPlayerInfo = Globals::AppManager()->m_pServerExoApp->GetNetLayer()->GetPlayerInfo(pPlayer->m_nPlayerID);
-    //return pPlayerInfo ? pPlayerInfo->m_lstKeys.element[0].sPublic.CStr() : "";
     return pPlayerInfo ? pPlayerInfo->m_cCDKey.sPublic.CStr() : "";
 }
 
@@ -255,13 +252,11 @@ static json PlayerCreatureToJson(CNWSPlayer *pPlayer)
                 return {};
         }
 
-        auto *pPolymorphData = pCreature->RemovePolymorphFromOutputCreature();
         CResGFF gff;
         CResStruct root{};
 
         if (!gff.CreateGFFFile(&root, "BIC ", "V2.0"))
         {
-            delete pPolymorphData;
             return {};
         }
 
@@ -271,7 +266,6 @@ static json PlayerCreatureToJson(CNWSPlayer *pPlayer)
             if (!pCreature->SaveCreature(&gff, &root, false))
             {
                 pCreature->m_bPlotObject = true;
-                delete pPolymorphData;
                 return {};
             }
             pCreature->m_bPlotObject = true;
@@ -280,13 +274,9 @@ static json PlayerCreatureToJson(CNWSPlayer *pPlayer)
         {
             if (!pCreature->SaveCreature(&gff, &root, false))
             {
-                delete pPolymorphData;
                 return {};
             }
         }
-
-        if (pPolymorphData)
-            pCreature->RestorePolymorphToOutputCreature(pPolymorphData);
 
         return NWSVMachineUtils::StructToJson(&gff, &root, 0xFFFFFFFF);
     }
@@ -367,8 +357,8 @@ static STRREF LoadCreatureData(CNWSPlayer *pPlayer, int32_t nCharacterId, CNWSCr
         pCreature->m_nLastAnimationTimeOfDay = gff.ReadFieldDWORD(&root, (char*)"AnimationTime", bSuccess);
         pCreature->m_nCreatureSize = gff.ReadFieldINT(&root, (char*)"CreatureSize", bSuccess, 3);
 
-        pCreature->LoadPolymorphData(&gff, &root);
         pCreature->ReadItemsFromGff(&gff, &root, false, true);
+        pCreature->LoadPolymorphData(&gff, &root);
 
         bool bRestoreSpellsFromSaveData = false;
         if (!Globals::AppManager()->m_pServerExoApp->m_pcExoAppInternal->m_pServerInfo->m_JoiningRestrictions.bAllowLocalVaultChars)
@@ -765,28 +755,20 @@ static BOOL SaveServerCharacterHook(CNWSPlayer *pPlayer, BOOL)
     LOG_DEBUG("SaveServerCharacter");
 
     if (pPlayer->m_nCharacterType != 3 && pPlayer->m_nCharacterType != 4)
-    {
-	LOG_WARNING("Player char type is unexpected: %02d", pPlayer->m_nCharacterType);    
         return false;
-    }
 
     json jCharacter = PlayerCreatureToJson(pPlayer);
 
-    if (jCharacter.is_null()) 
-    {
-	LOG_DEBUG("Player serialized into JSON was NULL");
+    if (jCharacter.is_null())
         return false;
-    }
 
     int32_t characterId = GetPlayerCharacterId(pPlayer);
 
     if (!characterId)
     {
-	LOG_DEBUG("No characterId for player char (probably a new char); inserting");
         std::string cdkey = GetPlayerCDKey(pPlayer);
         if ((characterId = VaultInsertCharacter(cdkey, jCharacter)))
         {
-            LOG_DEBUG("Inserted a new player char");
             VaultInsertLogEvent(characterId, cdkey, VaultEventType::Created);
             VaultSetPlayerAccess(characterId, cdkey);
             VaultSetPlayerOnline(characterId, cdkey);
@@ -797,13 +779,11 @@ static BOOL SaveServerCharacterHook(CNWSPlayer *pPlayer, BOOL)
         }
         else
         {
-	    LOG_DEBUG("Failed to insert a new player char");
             return false;
         }
     }
     else
     {
-	LOG_DEBUG("Found a characterId for player char (existing record); updating");
         return VaultUpdateCharacter(characterId, jCharacter);
     }
 
@@ -1034,7 +1014,7 @@ static void RemovePCFromWorldHook(CServerExoAppInternal *pThis, CNWSPlayer *pPla
 
     if (characterId && (!pPlayer->GetIsDM() || pPlayer->GetIsPlayerDM()))
     {
-        std::string cdkey = GetPlayerCDKey(pPlayer);
+        const std::string cdkey = GetPlayerCDKey(pPlayer);
         VaultSetPlayerOffline(characterId, cdkey);
         VaultInsertLogEvent(characterId, cdkey, VaultEventType::Logout);
     }
@@ -1164,17 +1144,20 @@ static void EatTURDHook(CNWSPlayer *pPlayer, CNWSPlayerTURD *pTURD)
     pCreature->SetOrientation(pTURD->m_vOrientation);
 
     pCreature->CopyScriptVars(&pTURD->m_ScriptVars);
+    pCreature->ReloadJournalEntries();
     pCreature->SetAutoMapData(pTURD->m_nNumAutomapAreas, pTURD->m_poidAutomapAreasList, pTURD->m_pAutoMapTileData);
 
     for (int i = 0; i < pTURD->m_appliedEffects.num; i++)
     {
         if (!pTURD->m_appliedEffects.element[i]->m_bSkipOnLoad && pTURD->m_appliedEffects.element[i]->GetDurationType() != Constants::EffectDurationType::Equipped)
         {
-            auto *pEffect = new CGameEffect();
+            auto *pEffect = new CGameEffect(false);
             pEffect->CopyEffect(pTURD->m_appliedEffects.element[i]);
             pCreature->ApplyEffect(pEffect, true);
         }
     }
+
+    pCreature->CleanUpOldPolymorphedItems();
 
     while (!pCreature->m_lQueuedActions.IsEmpty())
     {
