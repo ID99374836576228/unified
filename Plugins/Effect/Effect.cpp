@@ -2,6 +2,8 @@
 
 #include "API/CGameEffect.hpp"
 #include "API/CNWSObject.hpp"
+#include "API/CNWSCreature.hpp"
+#include "API/CNWSEffectListHandler.hpp"
 
 using namespace NWNXLib;
 using namespace NWNXLib::API;
@@ -270,3 +272,18 @@ NWNX_EXPORT ArgumentStack SetEffectCreator(ArgumentStack&& args)
 
     return effect;
 }
+
+static Hooks::Hook s_OnApplySetStateHook = Hooks::HookFunction(&CNWSEffectListHandler::OnApplySetState,
+    +[](CNWSEffectListHandler *pThis, CNWSObject *pObject, CGameEffect *pEffect, BOOL bLoadingGame) -> int32_t
+    {
+        if (auto *pCreature = Utils::AsNWSCreature(pObject))
+        {
+            int32_t isImmortal = pCreature->m_bIsImmortal;
+            pCreature->m_bIsImmortal = false;
+            auto retVal = s_OnApplySetStateHook->CallOriginal<int32_t>(pThis, pObject, pEffect, bLoadingGame);
+            pCreature->m_bIsImmortal = isImmortal;
+            return retVal;
+        }
+
+        return s_OnApplySetStateHook->CallOriginal<int32_t>(pThis, pObject, pEffect, bLoadingGame);
+    }, Hooks::Order::Early);
