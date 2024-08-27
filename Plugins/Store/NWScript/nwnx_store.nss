@@ -98,9 +98,12 @@ void NWNX_Store_SetMarkUp(object oStore, int nValue)
     NWNXCall(NWNX_Store, "SetMarkUp");
 }
 
-int NWNX_Store_GetCurrentCustomerCount(object oStore)
+int NWNX_Store_GetCurrentCustomersCount(object oStore)
 {
-    NWNXPushObject(oStore);
-    NWNXCall(NWNX_Store, "GetCurrentCustomerCount");
-    return NWNXPopInt();
+    string sFunc = "GetCurrentCustomersCount";
+
+    NWNX_PushArgumentObject(oStore);
+
+    NWNX_CallFunction(NWNX_Store, sFunc);
+    return NWNX_GetReturnValueInt();
 }
