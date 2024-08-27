@@ -2,6 +2,7 @@
 /// @brief Functions exposing additional store properties.
 /// @{
 /// @file nwnx_store.nss
+#include "nwnx"
 
 const string NWNX_Store = "NWNX_Store"; ///< @private
 

@@ -2,6 +2,7 @@
 /// @brief Functions exposing additional item properties.
 /// @{
 /// @file nwnx_item.nss
+#include "nwnx"
 
 const string NWNX_Item = "NWNX_Item"; ///< @private
 
