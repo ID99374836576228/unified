@@ -393,36 +393,31 @@ static STRREF LoadCreatureData(CNWSPlayer *pPlayer, int32_t nCharacterId, CNWSCr
 }
 
 static void UpdatePlayerList(CNWSPlayer *pSwitchingPlayer, ObjectID oidOld, ObjectID oidNew)
-{
-    auto *pPlayerList = Globals::AppManager()->m_pServerExoApp->m_pcExoAppInternal->m_pNWSPlayerList->m_pcExoLinkedListInternal;
-
-    for (auto *pHead = pPlayerList->pHead; pHead; pHead = pHead->pNext)
+{	
+	for (CNWSPlayer *pServerPlayer : Globals::AppManager()->m_pServerExoApp->m_pcExoAppInternal->m_lstPlayerList)
     {
-        if (auto *pServerPlayer = static_cast<CNWSPlayer*>(pHead->pObject))
-        {
-            if (auto *pMessage = Globals::AppManager()->m_pServerExoApp->GetNWSMessage())
-            {
-                if (pServerPlayer->m_bPlayModuleListingCharacters)
-                {
-                    pMessage->SendServerToPlayerPlayModuleCharacterListResponse(pServerPlayer->m_nPlayerID, oidOld, false);
-                    pMessage->SendServerToPlayerPlayModuleCharacterListResponse(pServerPlayer->m_nPlayerID, oidNew, true);
-                }
-                else
-                {
-                    if (pServerPlayer->m_nPlayerID != pSwitchingPlayer->m_nPlayerID)
-                    {
-                        if (auto *pCreature = Utils::AsNWSCreature(Utils::GetGameObject(pServerPlayer->m_oidNWSObject)))
-                        {
-                            pCreature->RemoveFromPVPList(oidOld);
-                            pCreature->AddToPVPList(oidNew);
-                        }
-                    }
+		if (auto *pMessage = Globals::AppManager()->m_pServerExoApp->GetNWSMessage())
+		{
+			if (pServerPlayer->m_bPlayModuleListingCharacters)
+			{
+				pMessage->SendServerToPlayerPlayModuleCharacterListResponse(pServerPlayer->m_nPlayerID, oidOld, false);
+				pMessage->SendServerToPlayerPlayModuleCharacterListResponse(pServerPlayer->m_nPlayerID, oidNew, true);
+			}
+			else
+			{
+				if (pServerPlayer->m_nPlayerID != pSwitchingPlayer->m_nPlayerID)
+				{
+					if (auto *pCreature = Utils::AsNWSCreature(Utils::GetGameObject(pServerPlayer->m_oidNWSObject)))
+					{
+						pCreature->RemoveFromPVPList(oidOld);
+						pCreature->AddToPVPList(oidNew);
+					}
+				}
 
-                    pMessage->SendServerToPlayerPlayerList_Delete(pServerPlayer->m_nPlayerID, pSwitchingPlayer);
-                    pMessage->SendServerToPlayerPlayerList_Add(pServerPlayer->m_nPlayerID, pSwitchingPlayer);
-                }
-            }
-        }
+				pMessage->SendServerToPlayerPlayerList_Delete(pServerPlayer->m_nPlayerID, pSwitchingPlayer);
+				pMessage->SendServerToPlayerPlayerList_Add(pServerPlayer->m_nPlayerID, pSwitchingPlayer);
+			}
+		}
     }
 }
 

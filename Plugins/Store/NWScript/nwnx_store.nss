@@ -2,7 +2,6 @@
 /// @brief Functions exposing additional store properties.
 /// @{
 /// @file nwnx_store.nss
-#include "nwnx"
 
 const string NWNX_Store = "NWNX_Store"; ///< @private
 
@@ -101,10 +100,7 @@ void NWNX_Store_SetMarkUp(object oStore, int nValue)
 
 int NWNX_Store_GetCurrentCustomersCount(object oStore)
 {
-    string sFunc = "GetCurrentCustomersCount";
-
-    NWNX_PushArgumentObject(oStore);
-
-    NWNX_CallFunction(NWNX_Store, sFunc);
-    return NWNX_GetReturnValueInt();
+    NWNXPushObject(oStore);
+    NWNXCall(NWNX_Store, "GetCurrentCustomersCount");
+    return NWNXPopInt();
 }

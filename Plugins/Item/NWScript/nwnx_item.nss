@@ -2,7 +2,6 @@
 /// @brief Functions exposing additional item properties.
 /// @{
 /// @file nwnx_item.nss
-#include "nwnx"
 
 const string NWNX_Item = "NWNX_Item"; ///< @private
 
@@ -176,16 +175,12 @@ void NWNX_Item_SetBaseItemType(object oItem, int nBaseItem)
 
 void NWNX_Item_SetItemAppearance(object oItem, int nType, int nIndex, int nValue, int bUpdateCreatureAppearance = FALSE)
 {
-    string sFunc = "SetItemAppearance";
-
-    NWNX_PushArgumentInt(bUpdateCreatureAppearance);
-    NWNX_PushArgumentInt(nValue);
-    NWNX_PushArgumentInt(nIndex);
-    NWNX_PushArgumentInt(nType);
-    NWNX_PushArgumentObject(oItem);
-
-    NWNX_CallFunction(NWNX_Item, sFunc);
-
+    NWNXPushInt(bUpdateCreatureAppearance);
+    NWNXPushInt(nValue);
+    NWNXPushInt(nIndex);
+    NWNXPushInt(nType);
+    NWNXPushObject(oItem);
+    NWNXCall(NWNX_Item, "SetItemAppearance");
 }
 
 string NWNX_Item_GetEntireItemAppearance(object oItem)
