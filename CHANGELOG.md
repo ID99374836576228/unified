@@ -27,10 +27,11 @@ https://github.com/nwnxee/unified/compare/build8193.36.12...HEAD
 - Player: ReloadColorPalettes()
 
 ### Changed
-- Player: added bChatWindow parameter to FloatingTextStringOnCreature() 
+- Player: added bChatWindow parameter to FloatingTextStringOnCreature()
 - Damage: added iSpellId to the NWNX_Damage_DamageEventData struct.
 - Docker: Add dotnet-runtime-8.0, dotnet-apphost-pack-8.0 packages.
 - Item: Added parameter `bUpdateCreatureAppearance` to SetItemAppearance() to update the appearance of the item's possessor.
+- Events: Added PLAYER_NAME, CDKEY as event data to the client disconnect events `NWNX_ON_CLIENT_DISCONNECT_{BEFORE|AFTER}`.
 
 ### Deprecated
 - DotNET: GetFunctionPointer()
@@ -40,7 +41,9 @@ https://github.com/nwnxee/unified/compare/build8193.36.12...HEAD
 - N/A
 
 ### Fixed
-- N/A
+- Race: Documentation updated as `NWNX_Utils` is no longer required with introduction of native `Get2DARowCount()`.
+- Core README indicated wrong argument for logging. `NWNX_CORE_LOG_FILE_NAME` should have been `NWNX_CORE_LOG_FILE_PATH`.
+- MaxLevel: Fixed levelling down not working correctly.
 
 ## 8193.36.10
 https://github.com/nwnxee/unified/compare/build8193.36.9...build8193.36.10
