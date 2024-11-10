@@ -791,3 +791,19 @@ NWNX_EXPORT ArgumentStack GetModuleTlkFile(ArgumentStack&&)
 {
     return Utils::GetModule()->m_sModuleAltTLKFile;
 }
+
+NWNX_EXPORT ArgumentStack GetScriptParams(ArgumentStack&&)
+{
+    JsonEngineStructure j;
+    j.m_shared->m_json = json::array();
+    const int32_t recursionLevel = Globals::VirtualMachine()->m_nRecursionLevel;
+    const auto &scriptParams = Globals::VirtualMachine()->m_lScriptParams[recursionLevel];
+    for (int32_t i = 0; i < scriptParams.num; i++)
+    {
+        json kv = json::object();
+        kv["key"] = scriptParams[i].key.c_str();
+        kv["value"] = scriptParams[i].value.c_str();
+        j.m_shared->m_json.emplace_back(kv);
+    }
+    return j;
+}

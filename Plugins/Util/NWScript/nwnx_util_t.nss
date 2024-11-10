@@ -64,6 +64,9 @@ void main()
     
     string sModMame = NWNX_Util_GetModuleFile();
     NWNX_Tests_Report("NWNX_Util", "GetModuleFile", sModMame != "");
+	
+	object jParams = NWNX_Util_GetScriptParams();
+	NWNX_Tests_Report("NWNX_Util", "GetScriptParams", JsonGetType(jParams) == JSON_TYPE_ARRAY);
 
     WriteTimestampedLogEntry("NWNX_Util unit test end.");
 }

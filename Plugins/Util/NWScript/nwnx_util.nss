@@ -556,3 +556,10 @@ string NWNX_Util_GetModuleTlkFile()
     NWNXCall(NWNX_Util, sFunc);
     return NWNXPopString();
 }
+
+json NWNX_Util_GetScriptParams()
+{
+    string sFunc = "GetScriptParams";
+    NWNXCall(NWNX_Util, sFunc);
+    return NWNXPopJson();
+}
